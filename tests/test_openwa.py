@@ -226,10 +226,11 @@ async def test_http_redirect_is_never_followed(hass, aioclient_mock, configured,
     assert redirect_flags == [False, False]
 
 
-@pytest.mark.parametrize("data", [{"chat_id": "status@broadcast"}, {"message": " "}, {"message": "x" * 4097}])
-async def test_invalid_action_data_never_reaches_openwa(hass, aioclient_mock, configured, data):
-    with pytest.raises(vol.Invalid):
+@pytest.mark.parametrize(("data", "error"), [({"chat_id": "status@broadcast"}, "invalid_chat_id"), ({"message": " "}, "invalid_message"), ({"message": "x" * 4097}, "invalid_message")])
+async def test_invalid_action_data_never_reaches_openwa(hass, aioclient_mock, configured, data, error):
+    with pytest.raises(ServiceValidationError) as failure:
         await _send(hass, **data)
+    assert failure.value.translation_key == error
     assert not aioclient_mock.mock_calls
 
 

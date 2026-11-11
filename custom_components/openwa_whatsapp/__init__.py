@@ -30,22 +30,10 @@ from .const import (
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
-def _validate_chat_id(value: str) -> str:
-    if not valid_chat_id(value):
-        raise vol.Invalid("Invalid WhatsApp chat ID")
-    return value
-
-
-def _validate_message(value: str) -> str:
-    if not value.strip() or len(value) > 4096:
-        raise vol.Invalid("Expected 1 to 4096 characters of message text")
-    return value
-
-
 SERVICE_SCHEMA = vol.Schema(
     {
-        vol.Required(ATTR_CHAT_ID): vol.All(str, _validate_chat_id),
-        vol.Required(ATTR_MESSAGE): vol.All(str, _validate_message),
+        vol.Required(ATTR_CHAT_ID): str,
+        vol.Required(ATTR_MESSAGE): str,
         vol.Optional(ATTR_ENTRY_ID): vol.All(str, vol.Length(min=1)),
     }
 )
@@ -56,6 +44,10 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     hass.data.setdefault(DOMAIN, {})
 
     async def async_send_message(call: ServiceCall) -> None:
+        if not valid_chat_id(call.data[ATTR_CHAT_ID]):
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="invalid_chat_id")
+        if not call.data[ATTR_MESSAGE].strip() or len(call.data[ATTR_MESSAGE]) > 4096:
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="invalid_message")
         clients = hass.data[DOMAIN]
         entry_id = call.data.get(ATTR_ENTRY_ID)
         if entry_id is None and len(clients) == 1:
