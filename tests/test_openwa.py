@@ -9,7 +9,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.openwa_whatsapp.client import OpenWAError, validate_endpoint
+from custom_components.openwa_whatsapp.client import OpenWAError, OpenWAErrorCode, validate_endpoint
 
 DOMAIN = "openwa_whatsapp"
 BASE = "https://openwa.example"
@@ -326,7 +326,7 @@ async def test_application_never_sends_when_check_fails():
 
     class Gateway:
         async def async_check_session(self):
-            raise OpenWAError("session_not_ready")
+            raise OpenWAError(OpenWAErrorCode.SESSION_NOT_READY)
 
         async def async_send_text(self, chat_id, message):
             pytest.fail("Unexpected send")
@@ -390,3 +390,39 @@ async def test_setup_handles_missing_session(hass, aioclient_mock):
     aioclient_mock.get(SESSION_URL, status=404)
     assert not await hass.config_entries.async_setup(entry.entry_id)
     assert entry.state.value == "setup_error"
+
+
+@pytest.mark.parametrize(
+    ("host", "allowed"),
+    [
+        ("10.0.0.0", True), ("10.255.255.255", True), ("11.0.0.0", False),
+        ("172.16.0.0", True), ("172.31.255.255", True), ("172.32.0.0", False),
+        ("192.168.0.0", True), ("192.168.255.255", True), ("192.169.0.0", False),
+        ("[fc00::]", True), ("[fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]", True),
+        ("[fe00::]", False), ("127.0.0.1", False), ("169.254.1.1", False),
+    ],
+)
+def test_http_private_network_boundaries(host, allowed):
+    url = f"http://{host}:2785"
+    if allowed:
+        assert str(validate_endpoint(url, KEY, "main", True)) == url
+    else:
+        with pytest.raises(OpenWAError, match="http_requires_private_ip"):
+            validate_endpoint(url, KEY, "main", True)
+
+
+async def test_session_tls_error(hass, aioclient_mock, configured):
+    aioclient_mock.get(SESSION_URL, exc=aiohttp.ClientSSLError(None, OSError("TLS error")))
+    with pytest.raises(ServiceValidationError) as failure:
+        await _send(hass)
+    assert failure.value.translation_key == "invalid_tls"
+    assert len(aioclient_mock.mock_calls) == 1
+
+
+async def test_auth_failure_after_entry_removed(hass, aioclient_mock, configured, monkeypatch):
+    aioclient_mock.get(SESSION_URL, status=401)
+    with monkeypatch.context() as patch:
+        patch.setattr(hass.config_entries, "async_get_entry", lambda entry_id: None)
+        with pytest.raises(ServiceValidationError) as failure:
+            await _send(hass)
+        assert failure.value.translation_key == "invalid_auth"
