@@ -61,20 +61,23 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         if entry_id is None and len(clients) == 1:
             entry_id = next(iter(clients))
         if entry_id not in clients:
-            error = "select_entry" if entry_id is None and clients else "entry_unavailable"
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key=error)
+            error = (
+                OpenWAErrorCode.SELECT_ENTRY if entry_id is None and clients
+                else OpenWAErrorCode.ENTRY_UNAVAILABLE
+            )
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key=error.value)
 
         try:
             await clients[entry_id].execute(
                 call.data[ATTR_CHAT_ID], call.data[ATTR_MESSAGE]
             )
         except OpenWAError as err:
-            if str(err) == OpenWAErrorCode.INVALID_AUTH:
+            if err.code == OpenWAErrorCode.INVALID_AUTH:
                 entry = hass.config_entries.async_get_entry(entry_id)
                 if entry is not None:
                     entry.async_start_reauth(hass)
             raise ServiceValidationError(
-                translation_domain=DOMAIN, translation_key=str(err)
+                translation_domain=DOMAIN, translation_key=err.code.value
             ) from None
 
     hass.services.async_register(
@@ -93,7 +96,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             entry.data.get(CONF_ALLOW_HTTP, False),
         )
     except OpenWAError as err:
-        raise ConfigEntryError(translation_domain=DOMAIN, translation_key=str(err)) from None
+        raise ConfigEntryError(translation_domain=DOMAIN, translation_key=err.code.value) from None
 
     client = OpenWAClient(
         async_get_clientsession(hass),
@@ -104,11 +107,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
         await client.async_check_session()
     except OpenWAError as err:
-        if str(err) == OpenWAErrorCode.INVALID_AUTH:
+        if err.code == OpenWAErrorCode.INVALID_AUTH:
             raise ConfigEntryAuthFailed from None
-        if str(err) in {OpenWAErrorCode.CANNOT_CONNECT, OpenWAErrorCode.SESSION_NOT_READY}:
+        if err.code in {OpenWAErrorCode.CANNOT_CONNECT, OpenWAErrorCode.SESSION_NOT_READY}:
             raise ConfigEntryNotReady from None
-        raise ConfigEntryError(translation_domain=DOMAIN, translation_key=str(err)) from None
+        raise ConfigEntryError(translation_domain=DOMAIN, translation_key=err.code.value) from None
 
     entry.runtime_data = SendNotification(client)
     hass.data[DOMAIN][entry.entry_id] = entry.runtime_data
