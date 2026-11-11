@@ -13,7 +13,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers import config_validation as cv
 
 from .application import SendNotification
-from .client import OpenWAClient, OpenWAError, valid_chat_id, validate_endpoint
+from .client import OpenWAClient, OpenWAError, OpenWAErrorCode, valid_chat_id, validate_endpoint
 from .const import (
     ATTR_CHAT_ID,
     ATTR_ENTRY_ID,
@@ -69,7 +69,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
                 call.data[ATTR_CHAT_ID], call.data[ATTR_MESSAGE]
             )
         except OpenWAError as err:
-            if str(err) == "invalid_auth":
+            if str(err) == OpenWAErrorCode.INVALID_AUTH:
                 entry = hass.config_entries.async_get_entry(entry_id)
                 if entry is not None:
                     entry.async_start_reauth(hass)
@@ -104,9 +104,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
         await client.async_check_session()
     except OpenWAError as err:
-        if str(err) == "invalid_auth":
+        if str(err) == OpenWAErrorCode.INVALID_AUTH:
             raise ConfigEntryAuthFailed from None
-        if str(err) in {"cannot_connect", "session_not_ready"}:
+        if str(err) in {OpenWAErrorCode.CANNOT_CONNECT, OpenWAErrorCode.SESSION_NOT_READY}:
             raise ConfigEntryNotReady from None
         raise ConfigEntryError(translation_domain=DOMAIN, translation_key=str(err)) from None
 
