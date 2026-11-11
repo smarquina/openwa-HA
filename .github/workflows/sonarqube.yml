@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: "3.14"
       - name: Install test dependencies
-        run: python -m pip install -r requirements-test.txt
+        run: python -m pip install --only-binary=:all: --no-binary=mock-open,PyRIC -r requirements-test.txt
       - name: Run tests and generate coverage
         run: python -m pytest -q --asyncio-mode=auto --cov=custom_components.openwa_whatsapp --cov-report=xml:coverage.xml
       - name: Cache SonarQube packages
