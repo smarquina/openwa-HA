@@ -1,0 +1,95 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "OpenWA WhatsApp",
+        "data": {
+          "base_url": "OpenWA base URL",
+          "api_key": "API key",
+          "session_id": "Session ID",
+          "allow_http": "Allow unencrypted HTTP to a private IP"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure OpenWA",
+        "data": {
+          "base_url": "OpenWA base URL",
+          "api_key": "API key",
+          "session_id": "Session ID",
+          "allow_http": "Allow unencrypted HTTP to a private IP"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate OpenWA",
+        "data": {
+          "api_key": "API key"
+        }
+      }
+    },
+    "error": {
+      "invalid_url": "Enter an HTTP or HTTPS origin without credentials, path or query.",
+      "http_requires_opt_in": "Explicitly enable HTTP for the private network or use HTTPS.",
+      "http_requires_private_ip": "HTTP requires a private IP address.",
+      "invalid_auth": "OpenWA credentials are invalid or lack permission.",
+      "invalid_session_id": "Use the OpenWA session ID with letters, digits or hyphens.",
+      "cannot_connect": "Could not connect to OpenWA. Check the server and network.",
+      "invalid_tls": "OpenWA TLS verification failed.",
+      "invalid_response": "OpenWA returned an unexpected session response.",
+      "session_not_found": "The selected OpenWA session does not exist or is inaccessible.",
+      "session_not_ready": "Pair or restore the session in OpenWA and wait until it is ready.",
+      "forbidden": "The API key lacks permission for this operation."
+    },
+    "abort": {
+      "already_configured": "This session is already configured.",
+      "reconfigure_successful": "Configuration updated.",
+      "reauth_successful": "Authentication updated."
+    }
+  },
+  "exceptions": {
+    "invalid_url": {
+      "message": "Enter an HTTP or HTTPS origin without credentials, path or query."
+    },
+    "http_requires_opt_in": {
+      "message": "Explicitly enable HTTP for the private network or use HTTPS."
+    },
+    "http_requires_private_ip": {
+      "message": "HTTP requires a private IP address."
+    },
+    "invalid_auth": {
+      "message": "OpenWA credentials are invalid or lack permission."
+    },
+    "invalid_session_id": {
+      "message": "Use the OpenWA session ID with letters, digits or hyphens."
+    },
+    "cannot_connect": {
+      "message": "Could not connect to OpenWA. Check the server and network."
+    },
+    "invalid_tls": {
+      "message": "OpenWA TLS verification failed."
+    },
+    "invalid_response": {
+      "message": "OpenWA returned an unexpected session response."
+    },
+    "session_not_found": {
+      "message": "The selected OpenWA session does not exist or is inaccessible."
+    },
+    "session_not_ready": {
+      "message": "Pair or restore the session in OpenWA and wait until it is ready."
+    },
+    "send_rejected": {
+      "message": "OpenWA rejected the message. Check the recipient and the session."
+    },
+    "send_unknown": {
+      "message": "OpenWA did not confirm submission. Check WhatsApp before resending."
+    },
+    "select_entry": {
+      "message": "Select an entry_id when several OpenWA entries are loaded."
+    },
+    "entry_unavailable": {
+      "message": "The selected OpenWA entry is unavailable."
+    },
+    "forbidden": {
+      "message": "The API key lacks permission for this operation."
+    }
+  }
+}
