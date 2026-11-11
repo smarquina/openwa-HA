@@ -1,5 +1,7 @@
 # OpenWA WhatsApp para Home Assistant
 
+[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=smarquina_openwa-HA)](https://sonarcloud.io/summary/new_code?id=smarquina_openwa-HA)
+
 Integración para enviar avisos de texto desde Home Assistant a chats individuales y grupos mediante una sesión de WhatsApp vinculada en OpenWA.
 
 ## Compatibilidad
