@@ -60,7 +60,7 @@ class OpenWAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     data[CONF_API_KEY], data[CONF_SESSION_ID],
                 ).async_check_session()
             except OpenWAError as err:
-                errors["base"] = str(err)
+                errors["base"] = err.code.value
             else:
                 return self.async_update_reload_and_abort(entry, data=data)
         return self.async_show_form(
@@ -93,7 +93,7 @@ class OpenWAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
                 await client.async_check_session()
             except OpenWAError as err:
-                errors["base"] = str(err)
+                errors["base"] = err.code.value
             else:
                 data = {**user_input, CONF_BASE_URL: str(origin)}
                 unique_id = f"{origin}_{session_id}"
