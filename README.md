@@ -2,7 +2,7 @@
 
 <img src="custom_components/openwa_whatsapp/brand/icon.png" width="128" alt="OpenWA WhatsApp integration icon">
 
-[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=smarquina_openwa-HA)](https://sonarcloud.io/summary/new_code?id=smarquina_openwa-HA)
+[![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=smarquina_openwa-HA&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=smarquina_openwa-HA)
 [![Validation](https://github.com/smarquina/openwa-HA/actions/workflows/validation.yml/badge.svg?branch=main)](https://github.com/smarquina/openwa-HA/actions/workflows/validation.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.10%2B-blue?logo=homeassistant)](https://www.home-assistant.io/)
