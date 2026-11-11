@@ -36,4 +36,5 @@ jobs:
             -Dsonar.projectKey=smarquina_openwa-HA
             -Dsonar.sources=custom_components
             -Dsonar.tests=tests
+            -Dsonar.python.version=3.14
             -Dsonar.python.coverage.reportPaths=coverage.xml
