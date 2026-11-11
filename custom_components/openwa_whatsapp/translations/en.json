@@ -90,6 +90,32 @@
     },
     "forbidden": {
       "message": "The API key lacks permission for this operation."
+    },
+    "invalid_chat_id": {
+      "message": "Invalid WhatsApp chat ID."
+    },
+    "invalid_message": {
+      "message": "Enter a message containing between 1 and 4096 characters."
+    }
+  },
+  "services": {
+    "send_message": {
+      "name": "Send WhatsApp message",
+      "description": "Send a WhatsApp message through an OpenWA API session.",
+      "fields": {
+        "chat_id": {
+          "name": "Chat ID",
+          "description": "WhatsApp chat ID. Individual chats usually end in @c.us and groups in @g.us."
+        },
+        "message": {
+          "name": "Message",
+          "description": "Message text to send."
+        },
+        "entry_id": {
+          "name": "Entry ID",
+          "description": "Optional Home Assistant config entry ID to use when multiple OpenWA instances are configured."
+        }
+      }
     }
   }
 }

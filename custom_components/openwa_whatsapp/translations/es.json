@@ -90,6 +90,32 @@
     },
     "forbidden": {
       "message": "La clave de API no tiene permiso para esta operación."
+    },
+    "invalid_chat_id": {
+      "message": "El ID del chat de WhatsApp no es válido."
+    },
+    "invalid_message": {
+      "message": "Introduce un mensaje de entre 1 y 4096 caracteres."
+    }
+  },
+  "services": {
+    "send_message": {
+      "name": "Enviar mensaje de WhatsApp",
+      "description": "Envía un mensaje de WhatsApp mediante una sesión de la API de OpenWA.",
+      "fields": {
+        "chat_id": {
+          "name": "ID del chat",
+          "description": "ID del chat de WhatsApp. Los chats individuales suelen terminar en @c.us y los grupos en @g.us."
+        },
+        "message": {
+          "name": "Mensaje",
+          "description": "Texto del mensaje que se enviará."
+        },
+        "entry_id": {
+          "name": "ID de la entrada",
+          "description": "ID opcional de la entrada de configuración de Home Assistant si hay varias instancias de OpenWA configuradas."
+        }
+      }
     }
   }
 }

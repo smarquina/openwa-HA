@@ -9,7 +9,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.openwa_whatsapp.client import OpenWAError, validate_endpoint
+from custom_components.openwa_whatsapp.client import OpenWAError, OpenWAErrorCode, validate_endpoint
 
 DOMAIN = "openwa_whatsapp"
 BASE = "https://openwa.example"
@@ -226,10 +226,11 @@ async def test_http_redirect_is_never_followed(hass, aioclient_mock, configured,
     assert redirect_flags == [False, False]
 
 
-@pytest.mark.parametrize("data", [{"chat_id": "status@broadcast"}, {"message": " "}, {"message": "x" * 4097}])
-async def test_invalid_action_data_never_reaches_openwa(hass, aioclient_mock, configured, data):
-    with pytest.raises(vol.Invalid):
+@pytest.mark.parametrize(("data", "error"), [({"chat_id": "status@broadcast"}, "invalid_chat_id"), ({"message": " "}, "invalid_message"), ({"message": "x" * 4097}, "invalid_message")])
+async def test_invalid_action_data_never_reaches_openwa(hass, aioclient_mock, configured, data, error):
+    with pytest.raises(ServiceValidationError) as failure:
         await _send(hass, **data)
+    assert failure.value.translation_key == error
     assert not aioclient_mock.mock_calls
 
 
@@ -326,7 +327,7 @@ async def test_application_never_sends_when_check_fails():
 
     class Gateway:
         async def async_check_session(self):
-            raise OpenWAError("session_not_ready")
+            raise OpenWAError(OpenWAErrorCode.SESSION_NOT_READY)
 
         async def async_send_text(self, chat_id, message):
             pytest.fail("Unexpected send")
@@ -390,3 +391,56 @@ async def test_setup_handles_missing_session(hass, aioclient_mock):
     aioclient_mock.get(SESSION_URL, status=404)
     assert not await hass.config_entries.async_setup(entry.entry_id)
     assert entry.state.value == "setup_error"
+
+
+@pytest.mark.parametrize(
+    ("host", "allowed"),
+    [
+        ("10.0.0.0", True), ("10.255.255.255", True), ("11.0.0.0", False),
+        ("172.16.0.0", True), ("172.31.255.255", True), ("172.32.0.0", False),
+        ("192.168.0.0", True), ("192.168.255.255", True), ("192.169.0.0", False),
+        ("[fc00::]", True), ("[fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]", True),
+        ("[fe00::]", False), ("127.0.0.1", False), ("169.254.1.1", False),
+    ],
+)
+def test_http_private_network_boundaries(host, allowed):
+    url = f"http://{host}:2785"
+    if allowed:
+        assert str(validate_endpoint(url, KEY, "main", True)) == url
+    else:
+        with pytest.raises(OpenWAError, match="http_requires_private_ip"):
+            validate_endpoint(url, KEY, "main", True)
+
+
+async def test_session_tls_error(hass, aioclient_mock, configured):
+    aioclient_mock.get(SESSION_URL, exc=aiohttp.ClientSSLError(None, OSError("TLS error")))
+    with pytest.raises(ServiceValidationError) as failure:
+        await _send(hass)
+    assert failure.value.translation_key == "invalid_tls"
+    assert len(aioclient_mock.mock_calls) == 1
+
+
+async def test_auth_failure_after_entry_removed(hass, aioclient_mock, configured, monkeypatch):
+    aioclient_mock.get(SESSION_URL, status=401)
+    with monkeypatch.context() as patch:
+        patch.setattr(hass.config_entries, "async_get_entry", lambda entry_id: None)
+        with pytest.raises(ServiceValidationError) as failure:
+            await _send(hass)
+        assert failure.value.translation_key == "invalid_auth"
+
+
+async def test_reconfigure_rejects_another_entry_identity(hass, aioclient_mock):
+    """Reconfiguration must not take an existing session's identity."""
+    first = MockConfigEntry(domain=DOMAIN, data=CONFIG, unique_id=f"{BASE}_main")
+    second_data = {**CONFIG, "session_id": "other"}
+    second = MockConfigEntry(domain=DOMAIN, data=second_data, unique_id=f"{BASE}_other")
+    first.add_to_hass(hass)
+    second.add_to_hass(hass)
+    aioclient_mock.get(SESSION_URL, json=READY, headers=JSON)
+    flow = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": second.entry_id}
+    )
+    result = await hass.config_entries.flow.async_configure(flow["flow_id"], CONFIG)
+    assert result["reason"] == "already_configured"
+    assert second.unique_id == f"{BASE}_other"
+    assert second.data == second_data
