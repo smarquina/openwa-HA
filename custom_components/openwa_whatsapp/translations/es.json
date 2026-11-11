@@ -1,0 +1,95 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "OpenWA WhatsApp",
+        "data": {
+          "base_url": "URL base de OpenWA",
+          "api_key": "Clave de API",
+          "session_id": "ID de sesión",
+          "allow_http": "Permitir HTTP sin cifrar a una IP privada"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigurar OpenWA",
+        "data": {
+          "base_url": "URL base de OpenWA",
+          "api_key": "Clave de API",
+          "session_id": "ID de sesión",
+          "allow_http": "Permitir HTTP sin cifrar a una IP privada"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Volver a autenticar OpenWA",
+        "data": {
+          "api_key": "Clave de API"
+        }
+      }
+    },
+    "error": {
+      "invalid_url": "Introduce una URL HTTP o HTTPS sin credenciales, ruta ni consulta.",
+      "http_requires_opt_in": "Autoriza explícitamente HTTP para la red privada o usa HTTPS.",
+      "http_requires_private_ip": "HTTP requiere una dirección IP privada.",
+      "invalid_auth": "La clave de OpenWA no es válida o carece de permisos.",
+      "invalid_session_id": "Usa el ID de sesión de OpenWA con letras, números o guiones.",
+      "cannot_connect": "No se pudo conectar con OpenWA. Comprueba el servidor y la red.",
+      "invalid_tls": "Falló la verificación TLS de OpenWA.",
+      "invalid_response": "OpenWA devolvió una respuesta de sesión inesperada.",
+      "session_not_found": "La sesión seleccionada de OpenWA no existe o es inaccesible.",
+      "session_not_ready": "Vincula o recupera la sesión en OpenWA y espera a que esté lista.",
+      "forbidden": "La clave de API no tiene permiso para esta operación."
+    },
+    "abort": {
+      "already_configured": "Esta sesión ya está configurada.",
+      "reconfigure_successful": "Configuración actualizada.",
+      "reauth_successful": "Autenticación actualizada."
+    }
+  },
+  "exceptions": {
+    "invalid_url": {
+      "message": "Introduce una URL HTTP o HTTPS sin credenciales, ruta ni consulta."
+    },
+    "http_requires_opt_in": {
+      "message": "Autoriza explícitamente HTTP para la red privada o usa HTTPS."
+    },
+    "http_requires_private_ip": {
+      "message": "HTTP requiere una dirección IP privada."
+    },
+    "invalid_auth": {
+      "message": "La clave de OpenWA no es válida o carece de permisos."
+    },
+    "invalid_session_id": {
+      "message": "Usa el ID de sesión de OpenWA con letras, números o guiones."
+    },
+    "cannot_connect": {
+      "message": "No se pudo conectar con OpenWA. Comprueba el servidor y la red."
+    },
+    "invalid_tls": {
+      "message": "Falló la verificación TLS de OpenWA."
+    },
+    "invalid_response": {
+      "message": "OpenWA devolvió una respuesta de sesión inesperada."
+    },
+    "session_not_found": {
+      "message": "La sesión seleccionada de OpenWA no existe o es inaccesible."
+    },
+    "session_not_ready": {
+      "message": "Vincula o recupera la sesión en OpenWA y espera a que esté lista."
+    },
+    "send_rejected": {
+      "message": "OpenWA rechazó el mensaje. Comprueba el destinatario y la sesión."
+    },
+    "send_unknown": {
+      "message": "OpenWA no confirmó el envío. Comprueba WhatsApp antes de repetirlo."
+    },
+    "select_entry": {
+      "message": "Indica entry_id cuando haya varias entradas de OpenWA cargadas."
+    },
+    "entry_unavailable": {
+      "message": "La entrada de OpenWA seleccionada no está disponible."
+    },
+    "forbidden": {
+      "message": "La clave de API no tiene permiso para esta operación."
+    }
+  }
+}

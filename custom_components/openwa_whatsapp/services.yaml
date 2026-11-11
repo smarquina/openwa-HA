@@ -1,0 +1,25 @@
+send_message:
+  name: Send WhatsApp message
+  description: Send a WhatsApp message through an OpenWA API session.
+  fields:
+    chat_id:
+      name: Chat ID
+      description: WhatsApp chat ID. Individual chats usually look like 15551234567@c.us. Groups usually end with @g.us.
+      required: true
+      example: "15551234567@c.us"
+      selector:
+        text:
+    message:
+      name: Message
+      description: Message text to send.
+      required: true
+      example: "Garage door opened"
+      selector:
+        text:
+          multiline: true
+    entry_id:
+      name: Entry ID
+      description: Optional Home Assistant config entry ID to use when multiple OpenWA instances are configured.
+      required: false
+      selector:
+        text:
