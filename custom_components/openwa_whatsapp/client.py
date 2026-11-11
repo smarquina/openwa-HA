@@ -10,14 +10,18 @@ import re
 import aiohttp
 from yarl import URL
 
+# RFC 1918 and RFC 4193 define the private networks allowed for explicit HTTP.
+# These are network classifications, not the address of an OpenWA server.
 _PRIVATE_NETWORKS = tuple(
     ip_network(network)
     for network in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7")
 )
 _SESSION_ID = re.compile(r"[A-Za-z0-9-]{1,128}")
 _CHAT_ID = re.compile(r"(?:[0-9]{1,15}@c\.us|[0-9]{1,24}(?:-[0-9]{1,24})?@g\.us)")
+_SESSION_READY = "ready"
 _MAX_RESPONSE = 65536
-_TRANSIENT = {429, 500, 502, 503, 504}
+_TRANSIENT = {HTTPStatus.TOO_MANY_REQUESTS, HTTPStatus.INTERNAL_SERVER_ERROR,
+              HTTPStatus.BAD_GATEWAY, HTTPStatus.SERVICE_UNAVAILABLE, HTTPStatus.GATEWAY_TIMEOUT}
 
 
 class OpenWAErrorCode(StrEnum):
@@ -36,10 +40,16 @@ class OpenWAErrorCode(StrEnum):
     FORBIDDEN = "forbidden"
     SEND_REJECTED = "send_rejected"
     SEND_UNKNOWN = "send_unknown"
+    SELECT_ENTRY = "select_entry"
+    ENTRY_UNAVAILABLE = "entry_unavailable"
 
 
 class OpenWAError(Exception):
     """Carry only a fixed, non-sensitive error code."""
+
+    def __init__(self, code: OpenWAErrorCode) -> None:
+        self.code = code
+        super().__init__(code)
 
 
 def validate_endpoint(base_url: str, api_key: str, session_id: str, allow_http: bool) -> URL:
@@ -82,7 +92,7 @@ def valid_chat_id(value: str) -> bool:
     return _CHAT_ID.fullmatch(value) is not None
 
 
-async def _read_object(response: aiohttp.ClientResponse, error: str) -> dict:
+async def _read_object(response: aiohttp.ClientResponse, error: OpenWAErrorCode) -> dict:
     """Read a bounded JSON object without exposing response contents."""
     if response.content_type != "application/json":
         raise OpenWAError(error)
@@ -116,7 +126,7 @@ class OpenWAClient:
         try:
             await self._async_read_session()
         except OpenWAError as err:
-            if str(err) != OpenWAErrorCode.CANNOT_CONNECT:
+            if err.code != OpenWAErrorCode.CANNOT_CONNECT:
                 raise
             await asyncio.sleep(1)
             await self._async_read_session()
@@ -130,15 +140,15 @@ class OpenWAClient:
                 allow_redirects=False,
                 auto_decompress=False,
             ) as response:
-                if response.status == 401:
+                if response.status == HTTPStatus.UNAUTHORIZED:
                     raise OpenWAError(OpenWAErrorCode.INVALID_AUTH)
-                if response.status == 403:
+                if response.status == HTTPStatus.FORBIDDEN:
                     raise OpenWAError(OpenWAErrorCode.FORBIDDEN)
-                if response.status == 404:
+                if response.status == HTTPStatus.NOT_FOUND:
                     raise OpenWAError(OpenWAErrorCode.SESSION_NOT_FOUND)
                 if response.status in _TRANSIENT:
                     raise OpenWAError(OpenWAErrorCode.CANNOT_CONNECT)
-                if response.status != 200:
+                if response.status != HTTPStatus.OK:
                     raise OpenWAError(OpenWAErrorCode.INVALID_RESPONSE)
                 data = await _read_object(response, OpenWAErrorCode.INVALID_RESPONSE)
         except (aiohttp.ClientSSLError, aiohttp.ServerFingerprintMismatch):
@@ -148,7 +158,7 @@ class OpenWAClient:
 
         if data.get("id") != self._session_id or not isinstance(data.get("status"), str):
             raise OpenWAError(OpenWAErrorCode.INVALID_RESPONSE)
-        if data["status"] != "ready" or data.get("engineLoaded", True) is not True:
+        if data["status"] != _SESSION_READY or data.get("engineLoaded", True) is not True:
             raise OpenWAError(OpenWAErrorCode.SESSION_NOT_READY)
 
     async def async_send_text(self, chat_id: str, message: str) -> None:
@@ -162,11 +172,11 @@ class OpenWAClient:
                 allow_redirects=False,
                 auto_decompress=False,
             ) as response:
-                if response.status == 401:
+                if response.status == HTTPStatus.UNAUTHORIZED:
                     raise OpenWAError(OpenWAErrorCode.INVALID_AUTH)
-                if response.status == 403:
+                if response.status == HTTPStatus.FORBIDDEN:
                     raise OpenWAError(OpenWAErrorCode.FORBIDDEN)
-                if response.status in (400, 404, 413):
+                if response.status in (HTTPStatus.BAD_REQUEST, HTTPStatus.NOT_FOUND, HTTPStatus.REQUEST_ENTITY_TOO_LARGE):
                     raise OpenWAError(OpenWAErrorCode.SEND_REJECTED)
                 if response.status != HTTPStatus.CREATED:
                     raise OpenWAError(OpenWAErrorCode.SEND_UNKNOWN)
