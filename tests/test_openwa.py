@@ -427,3 +427,20 @@ async def test_auth_failure_after_entry_removed(hass, aioclient_mock, configured
         with pytest.raises(ServiceValidationError) as failure:
             await _send(hass)
         assert failure.value.translation_key == "invalid_auth"
+
+
+async def test_reconfigure_rejects_another_entry_identity(hass, aioclient_mock):
+    """Reconfiguration must not take an existing session's identity."""
+    first = MockConfigEntry(domain=DOMAIN, data=CONFIG, unique_id=f"{BASE}_main")
+    second_data = {**CONFIG, "session_id": "other"}
+    second = MockConfigEntry(domain=DOMAIN, data=second_data, unique_id=f"{BASE}_other")
+    first.add_to_hass(hass)
+    second.add_to_hass(hass)
+    aioclient_mock.get(SESSION_URL, json=READY, headers=JSON)
+    flow = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": second.entry_id}
+    )
+    result = await hass.config_entries.flow.async_configure(flow["flow_id"], CONFIG)
+    assert result["reason"] == "already_configured"
+    assert second.unique_id == f"{BASE}_other"
+    assert second.data == second_data

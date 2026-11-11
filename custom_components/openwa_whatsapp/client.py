@@ -1,7 +1,7 @@
 """HTTP client for the rmyndharis/OpenWA REST API."""
 
 import asyncio
-from enum import Enum, StrEnum
+from enum import Enum
 from http import HTTPStatus
 from ipaddress import ip_address, ip_network
 import json
@@ -10,10 +10,14 @@ import re
 import aiohttp
 from yarl import URL
 
+from .errors import OpenWAError, OpenWAErrorCode
+
 _SESSION_ID = re.compile(r"[A-Za-z0-9-]{1,128}")
-_CHAT_ID = re.compile(r"(?:[0-9]{1,15}@c\.us|[0-9]{1,24}(?:-[0-9]{1,24})?@g\.us)")
 _SESSION_READY = "ready"
 _MAX_RESPONSE = 65536
+_SESSION_TIMEOUT_SECONDS = 5
+_SEND_TIMEOUT_SECONDS = 30
+_SESSION_RETRY_DELAY_SECONDS = 1
 _TRANSIENT = {HTTPStatus.TOO_MANY_REQUESTS, HTTPStatus.INTERNAL_SERVER_ERROR,
               HTTPStatus.BAD_GATEWAY, HTTPStatus.SERVICE_UNAVAILABLE, HTTPStatus.GATEWAY_TIMEOUT}
 
@@ -26,33 +30,6 @@ class _PrivateNetwork(Enum):
     RFC1918_192_168 = ip_network("192.168.0.0/16")
     RFC4193_UNIQUE_LOCAL = ip_network("fc00::/7")
 
-
-class OpenWAErrorCode(StrEnum):
-    """Stable error codes used by the integration."""
-
-    INVALID_URL = "invalid_url"
-    HTTP_REQUIRES_OPT_IN = "http_requires_opt_in"
-    HTTP_REQUIRES_PRIVATE_IP = "http_requires_private_ip"
-    INVALID_AUTH = "invalid_auth"
-    INVALID_SESSION_ID = "invalid_session_id"
-    CANNOT_CONNECT = "cannot_connect"
-    INVALID_TLS = "invalid_tls"
-    INVALID_RESPONSE = "invalid_response"
-    SESSION_NOT_FOUND = "session_not_found"
-    SESSION_NOT_READY = "session_not_ready"
-    FORBIDDEN = "forbidden"
-    SEND_REJECTED = "send_rejected"
-    SEND_UNKNOWN = "send_unknown"
-    SELECT_ENTRY = "select_entry"
-    ENTRY_UNAVAILABLE = "entry_unavailable"
-
-
-class OpenWAError(Exception):
-    """Carry only a fixed, non-sensitive error code."""
-
-    def __init__(self, code: OpenWAErrorCode) -> None:
-        self.code = code
-        super().__init__(code)
 
 
 def validate_endpoint(base_url: str, api_key: str, session_id: str, allow_http: bool) -> URL:
@@ -88,11 +65,6 @@ def validate_endpoint(base_url: str, api_key: str, session_id: str, allow_http: 
     if not _SESSION_ID.fullmatch(session_id):
         raise OpenWAError(OpenWAErrorCode.INVALID_SESSION_ID)
     return url.origin()
-
-
-def valid_chat_id(value: str) -> bool:
-    """Accept individual and group WhatsApp identifiers."""
-    return _CHAT_ID.fullmatch(value) is not None
 
 
 async def _read_object(response: aiohttp.ClientResponse, error: OpenWAErrorCode) -> dict:
@@ -131,7 +103,7 @@ class OpenWAClient:
         except OpenWAError as err:
             if err.code != OpenWAErrorCode.CANNOT_CONNECT:
                 raise
-            await asyncio.sleep(1)
+            await asyncio.sleep(_SESSION_RETRY_DELAY_SECONDS)
             await self._async_read_session()
 
     async def _async_read_session(self) -> None:
@@ -139,7 +111,7 @@ class OpenWAClient:
             async with self._http.get(
                 self._session_url,
                 headers=self._headers,
-                timeout=aiohttp.ClientTimeout(total=5),
+                timeout=aiohttp.ClientTimeout(total=_SESSION_TIMEOUT_SECONDS),
                 allow_redirects=False,
                 auto_decompress=False,
             ) as response:
@@ -171,7 +143,7 @@ class OpenWAClient:
                 self._session_url / "messages" / "send-text",
                 headers=self._headers,
                 json={"chatId": chat_id, "text": message},
-                timeout=aiohttp.ClientTimeout(total=30),
+                timeout=aiohttp.ClientTimeout(total=_SEND_TIMEOUT_SECONDS),
                 allow_redirects=False,
                 auto_decompress=False,
             ) as response:

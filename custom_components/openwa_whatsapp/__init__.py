@@ -13,7 +13,8 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers import config_validation as cv
 
 from .application import SendNotification
-from .client import OpenWAClient, OpenWAError, OpenWAErrorCode, valid_chat_id, validate_endpoint
+from .client import OpenWAClient, validate_endpoint
+from .errors import OpenWAError, OpenWAErrorCode
 from .const import (
     ATTR_CHAT_ID,
     ATTR_ENTRY_ID,
@@ -44,10 +45,6 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     hass.data.setdefault(DOMAIN, {})
 
     async def async_send_message(call: ServiceCall) -> None:
-        if not valid_chat_id(call.data[ATTR_CHAT_ID]):
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="invalid_chat_id")
-        if not call.data[ATTR_MESSAGE].strip() or len(call.data[ATTR_MESSAGE]) > 4096:
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="invalid_message")
         clients = hass.data[DOMAIN]
         entry_id = call.data.get(ATTR_ENTRY_ID)
         if entry_id is None and len(clients) == 1:
