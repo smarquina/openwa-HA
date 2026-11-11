@@ -1,6 +1,7 @@
 """HTTP client for the rmyndharis/OpenWA REST API."""
 
 import asyncio
+from enum import StrEnum
 from http import HTTPStatus
 from ipaddress import ip_address, ip_network
 import json
@@ -19,6 +20,24 @@ _MAX_RESPONSE = 65536
 _TRANSIENT = {429, 500, 502, 503, 504}
 
 
+class OpenWAErrorCode(StrEnum):
+    """Stable error codes used by the integration."""
+
+    INVALID_URL = "invalid_url"
+    HTTP_REQUIRES_OPT_IN = "http_requires_opt_in"
+    HTTP_REQUIRES_PRIVATE_IP = "http_requires_private_ip"
+    INVALID_AUTH = "invalid_auth"
+    INVALID_SESSION_ID = "invalid_session_id"
+    CANNOT_CONNECT = "cannot_connect"
+    INVALID_TLS = "invalid_tls"
+    INVALID_RESPONSE = "invalid_response"
+    SESSION_NOT_FOUND = "session_not_found"
+    SESSION_NOT_READY = "session_not_ready"
+    FORBIDDEN = "forbidden"
+    SEND_REJECTED = "send_rejected"
+    SEND_UNKNOWN = "send_unknown"
+
+
 class OpenWAError(Exception):
     """Carry only a fixed, non-sensitive error code."""
 
@@ -26,7 +45,7 @@ class OpenWAError(Exception):
 def validate_endpoint(base_url: str, api_key: str, session_id: str, allow_http: bool) -> URL:
     """Validate a single origin and credentials before constructing requests."""
     if any(char.isspace() or ord(char) < 32 or char in "\\@?#" for char in base_url):
-        raise OpenWAError("invalid_url")
+        raise OpenWAError(OpenWAErrorCode.INVALID_URL)
     try:
         url = URL(base_url)
         if (
@@ -39,22 +58,22 @@ def validate_endpoint(base_url: str, api_key: str, session_id: str, allow_http: 
         ):
             raise ValueError
     except (ValueError, UnicodeError, OverflowError):
-        raise OpenWAError("invalid_url") from None
+        raise OpenWAError(OpenWAErrorCode.INVALID_URL) from None
 
     if url.scheme == "http":
         if allow_http is not True:
-            raise OpenWAError("http_requires_opt_in")
+            raise OpenWAError(OpenWAErrorCode.HTTP_REQUIRES_OPT_IN)
         try:
             address = ip_address(url.raw_host)
         except ValueError:
-            raise OpenWAError("http_requires_private_ip") from None
+            raise OpenWAError(OpenWAErrorCode.HTTP_REQUIRES_PRIVATE_IP) from None
         if not any(address in network for network in _PRIVATE_NETWORKS):
-            raise OpenWAError("http_requires_private_ip")
+            raise OpenWAError(OpenWAErrorCode.HTTP_REQUIRES_PRIVATE_IP)
 
     if not api_key or not all(33 <= ord(char) <= 126 for char in api_key):
-        raise OpenWAError("invalid_auth")
+        raise OpenWAError(OpenWAErrorCode.INVALID_AUTH)
     if not _SESSION_ID.fullmatch(session_id):
-        raise OpenWAError("invalid_session_id")
+        raise OpenWAError(OpenWAErrorCode.INVALID_SESSION_ID)
     return url.origin()
 
 
@@ -97,7 +116,7 @@ class OpenWAClient:
         try:
             await self._async_read_session()
         except OpenWAError as err:
-            if str(err) != "cannot_connect":
+            if str(err) != OpenWAErrorCode.CANNOT_CONNECT:
                 raise
             await asyncio.sleep(1)
             await self._async_read_session()
@@ -112,25 +131,25 @@ class OpenWAClient:
                 auto_decompress=False,
             ) as response:
                 if response.status == 401:
-                    raise OpenWAError("invalid_auth")
+                    raise OpenWAError(OpenWAErrorCode.INVALID_AUTH)
                 if response.status == 403:
-                    raise OpenWAError("forbidden")
+                    raise OpenWAError(OpenWAErrorCode.FORBIDDEN)
                 if response.status == 404:
-                    raise OpenWAError("session_not_found")
+                    raise OpenWAError(OpenWAErrorCode.SESSION_NOT_FOUND)
                 if response.status in _TRANSIENT:
-                    raise OpenWAError("cannot_connect")
+                    raise OpenWAError(OpenWAErrorCode.CANNOT_CONNECT)
                 if response.status != 200:
-                    raise OpenWAError("invalid_response")
-                data = await _read_object(response, "invalid_response")
+                    raise OpenWAError(OpenWAErrorCode.INVALID_RESPONSE)
+                data = await _read_object(response, OpenWAErrorCode.INVALID_RESPONSE)
         except (aiohttp.ClientSSLError, aiohttp.ServerFingerprintMismatch):
-            raise OpenWAError("invalid_tls") from None
+            raise OpenWAError(OpenWAErrorCode.INVALID_TLS) from None
         except (aiohttp.ClientError, TimeoutError, ValueError):
-            raise OpenWAError("cannot_connect") from None
+            raise OpenWAError(OpenWAErrorCode.CANNOT_CONNECT) from None
 
         if data.get("id") != self._session_id or not isinstance(data.get("status"), str):
-            raise OpenWAError("invalid_response")
+            raise OpenWAError(OpenWAErrorCode.INVALID_RESPONSE)
         if data["status"] != "ready" or data.get("engineLoaded", True) is not True:
-            raise OpenWAError("session_not_ready")
+            raise OpenWAError(OpenWAErrorCode.SESSION_NOT_READY)
 
     async def async_send_text(self, chat_id: str, message: str) -> None:
         """Perform one POST. Never replay it."""
@@ -144,15 +163,15 @@ class OpenWAClient:
                 auto_decompress=False,
             ) as response:
                 if response.status == 401:
-                    raise OpenWAError("invalid_auth")
+                    raise OpenWAError(OpenWAErrorCode.INVALID_AUTH)
                 if response.status == 403:
-                    raise OpenWAError("forbidden")
+                    raise OpenWAError(OpenWAErrorCode.FORBIDDEN)
                 if response.status in (400, 404, 413):
-                    raise OpenWAError("send_rejected")
+                    raise OpenWAError(OpenWAErrorCode.SEND_REJECTED)
                 if response.status != HTTPStatus.CREATED:
-                    raise OpenWAError("send_unknown")
-                data = await _read_object(response, "send_unknown")
+                    raise OpenWAError(OpenWAErrorCode.SEND_UNKNOWN)
+                data = await _read_object(response, OpenWAErrorCode.SEND_UNKNOWN)
                 if not isinstance(data.get("messageId"), str) or not data["messageId"].strip():
-                    raise OpenWAError("send_unknown")
+                    raise OpenWAError(OpenWAErrorCode.SEND_UNKNOWN)
         except (aiohttp.ClientError, TimeoutError, ValueError):
-            raise OpenWAError("send_unknown") from None
+            raise OpenWAError(OpenWAErrorCode.SEND_UNKNOWN) from None
