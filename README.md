@@ -1,5 +1,7 @@
 # OpenWA WhatsApp for Home Assistant
 
+<img src="custom_components/openwa_whatsapp/brand/icon.png" width="128" alt="OpenWA WhatsApp integration icon">
+
 [![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=smarquina_openwa-HA)](https://sonarcloud.io/summary/new_code?id=smarquina_openwa-HA)
 [![Validation](https://github.com/smarquina/openwa-HA/actions/workflows/validation.yml/badge.svg?branch=main)](https://github.com/smarquina/openwa-HA/actions/workflows/validation.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
