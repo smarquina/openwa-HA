@@ -8,7 +8,7 @@
   "documentation": "https://github.com/smarquina/openwa-HA",
   "integration_type": "service",
   "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/smarquina/openwa-HA/issues",
   "requirements": [],
-  "version": "0.3.0",
-  "issue_tracker": "https://github.com/smarquina/openwa-HA/issues"
+  "version": "0.3.0"
 }

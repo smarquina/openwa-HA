@@ -10,6 +10,7 @@ from homeassistant.exceptions import (
     ConfigEntryAuthFailed, ConfigEntryError, ConfigEntryNotReady, ServiceValidationError,
 )
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers import config_validation as cv
 
 from .application import SendNotification
 from .client import OpenWAClient, OpenWAError, valid_chat_id, validate_endpoint
@@ -24,6 +25,9 @@ from .const import (
     DOMAIN,
     SERVICE_SEND_MESSAGE,
 )
+
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 def _validate_chat_id(value: str) -> str:

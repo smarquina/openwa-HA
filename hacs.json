@@ -1,8 +1,5 @@
 {
   "name": "OpenWA WhatsApp",
   "render_readme": true,
-  "domains": [
-    "openwa_whatsapp"
-  ],
   "homeassistant": "2026.10.0"
 }

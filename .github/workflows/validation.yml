@@ -12,7 +12,7 @@ jobs:
         with:
           python-version: "3.14"
       - run: pip install -r requirements-test.txt
-      - run: pytest -q --asyncio-mode=auto --cov=custom_components.openwa_whatsapp --cov-report=term-missing
+      - run: python -m pytest -q --asyncio-mode=auto --cov=custom_components.openwa_whatsapp --cov-report=term-missing
   hassfest:
     runs-on: ubuntu-latest
     steps:
