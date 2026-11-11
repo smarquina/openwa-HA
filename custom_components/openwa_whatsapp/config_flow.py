@@ -12,7 +12,7 @@ from homeassistant.helpers.selector import (
     TextSelectorType,
 )
 
-from .client import OpenWAClient, OpenWAError, validate_endpoint
+from .client import OpenWAClient, OpenWAError, OpenWAErrorCode, validate_endpoint
 from .const import (
     CONF_ALLOW_HTTP,
     CONF_API_KEY,
