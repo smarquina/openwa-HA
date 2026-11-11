@@ -1,7 +1,7 @@
 """HTTP client for the rmyndharis/OpenWA REST API."""
 
 import asyncio
-from enum import StrEnum
+from enum import Enum, StrEnum
 from http import HTTPStatus
 from ipaddress import ip_address, ip_network
 import json
@@ -10,18 +10,21 @@ import re
 import aiohttp
 from yarl import URL
 
-# RFC 1918 and RFC 4193 define the private networks allowed for explicit HTTP.
-# These are network classifications, not the address of an OpenWA server.
-_PRIVATE_NETWORKS = tuple(
-    ip_network(network)
-    for network in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7")
-)
 _SESSION_ID = re.compile(r"[A-Za-z0-9-]{1,128}")
 _CHAT_ID = re.compile(r"(?:[0-9]{1,15}@c\.us|[0-9]{1,24}(?:-[0-9]{1,24})?@g\.us)")
 _SESSION_READY = "ready"
 _MAX_RESPONSE = 65536
 _TRANSIENT = {HTTPStatus.TOO_MANY_REQUESTS, HTTPStatus.INTERNAL_SERVER_ERROR,
               HTTPStatus.BAD_GATEWAY, HTTPStatus.SERVICE_UNAVAILABLE, HTTPStatus.GATEWAY_TIMEOUT}
+
+
+class _PrivateNetwork(Enum):
+    """RFC 1918 and RFC 4193 networks allowed for explicit HTTP."""
+
+    RFC1918_10 = ip_network("10.0.0.0/8")
+    RFC1918_172_16 = ip_network("172.16.0.0/12")
+    RFC1918_192_168 = ip_network("192.168.0.0/16")
+    RFC4193_UNIQUE_LOCAL = ip_network("fc00::/7")
 
 
 class OpenWAErrorCode(StrEnum):
@@ -77,7 +80,7 @@ def validate_endpoint(base_url: str, api_key: str, session_id: str, allow_http: 
             address = ip_address(url.raw_host)
         except ValueError:
             raise OpenWAError(OpenWAErrorCode.HTTP_REQUIRES_PRIVATE_IP) from None
-        if not any(address in network for network in _PRIVATE_NETWORKS):
+        if not any(address in network.value for network in _PrivateNetwork):
             raise OpenWAError(OpenWAErrorCode.HTTP_REQUIRES_PRIVATE_IP)
 
     if not api_key or not all(33 <= ord(char) <= 126 for char in api_key):
