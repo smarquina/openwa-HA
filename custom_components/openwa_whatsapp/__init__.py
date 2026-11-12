@@ -28,6 +28,8 @@ from .const import (
     CONF_API_KEY,
     CONF_BASE_URL,
     CONF_SESSION_ID,
+    CONF_POLL_INTERVAL,
+    DEFAULT_POLL_INTERVAL,
     DOMAIN,
     SERVICE_SEND_MESSAGE,
 )
@@ -118,7 +120,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             raise ConfigEntryNotReady from None
         raise ConfigEntryError(translation_domain=DOMAIN, translation_key=err.code.value) from None
 
-    coordinator = SessionCoordinator(hass, client)
+    coordinator = SessionCoordinator(hass, client, entry.data.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL))
     coordinator.async_set_updated_data(SESSION_READY)
     sender = SendNotification(client)
     entry.runtime_data = RuntimeData(client, sender, coordinator)

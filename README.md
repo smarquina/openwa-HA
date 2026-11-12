@@ -56,13 +56,14 @@ In Home Assistant, open **Settings → Devices & services → Add integration** 
 | OpenWA base URL | Origin of the OpenWA API, such as `https://openwa.example` or `http://192.168.1.20:2785`. Do not append `/api`. |
 | API key | OpenWA API key with access to the selected session and permission to send messages. |
 | Session ID | The ID of the linked OpenWA session. |
+| Session check interval (seconds) | Time between session checks, from 10 to 86400 seconds. Default: 60 seconds. |
 | Allow unencrypted HTTP to a private IP | Enable only when using HTTP with a private IP address. HTTPS is the default. |
 
 The integration checks that the selected session is ready. To change the connection settings, open the integration entry and select **Reconfigure**. Home Assistant stores the API key in the integration configuration.
 
 ## Session diagnostics
 
-Each configured entry provides two diagnostic entities: **Available**, a connectivity indicator, and **OpenWA session**, which explains the current state. They share a session check every 60 seconds using the configured API key and session ID. A ready session does not guarantee delivery of a message.
+Each configured entry provides two diagnostic entities: **Available**, a connectivity indicator, and **OpenWA session**, which explains the current state. They share a session check at the configured interval (60 seconds by default) using the configured API key and session ID. A ready session does not guarantee delivery of a message.
 
 ## Send a message
 

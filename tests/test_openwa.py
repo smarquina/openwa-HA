@@ -479,3 +479,29 @@ async def test_session_sensors_failure_and_recovery(hass, configured, monkeypatc
     await hass.async_block_till_done()
     assert hass.states.get(available).state == "on"
     assert hass.states.get(session).state == "ready"
+
+
+async def test_session_poll_interval_default_and_reconfigure(hass, aioclient_mock, configured):
+    """Existing entries default to 60 seconds and reconfigure the schedule."""
+    from datetime import timedelta
+
+    assert configured.runtime_data.coordinator.update_interval == timedelta(seconds=60)
+    aioclient_mock.get(SESSION_URL, json=READY, headers=JSON)
+    flow = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": configured.entry_id}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        flow["flow_id"], {**CONFIG, "poll_interval": 120}
+    )
+    assert result["reason"] == "reconfigure_successful"
+    await hass.async_block_till_done()
+    assert configured.data["poll_interval"] == 120
+    assert configured.runtime_data.coordinator.update_interval == timedelta(seconds=120)
+
+
+async def test_session_poll_interval_rejects_out_of_range(hass):
+    """Invalid polling intervals are rejected by the configuration schema."""
+    flow = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    for interval in (0, 9, 86401):
+        with pytest.raises(vol.Invalid):
+            flow["data_schema"]({**CONFIG, "poll_interval": interval})

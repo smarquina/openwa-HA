@@ -11,15 +11,14 @@ from .const import DOMAIN
 from .errors import OpenWAError, OpenWAErrorCode
 
 _LOGGER = logging.getLogger(__name__)
-UPDATE_INTERVAL = timedelta(seconds=60)
 SESSION_READY = "ready"
 
 
 class SessionCoordinator(DataUpdateCoordinator[str]):
     """Share one session check between diagnostic entities."""
 
-    def __init__(self, hass: HomeAssistant, gateway: MessagingGateway) -> None:
-        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=UPDATE_INTERVAL)
+    def __init__(self, hass: HomeAssistant, gateway: MessagingGateway, interval: int) -> None:
+        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=timedelta(seconds=interval))
         self._gateway = gateway
 
     async def _async_update_data(self) -> str:

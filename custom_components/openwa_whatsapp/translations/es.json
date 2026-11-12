@@ -7,7 +7,8 @@
           "base_url": "URL base de OpenWA",
           "api_key": "Clave de API",
           "session_id": "ID de sesión",
-          "allow_http": "Permitir HTTP sin cifrar a una IP privada"
+          "allow_http": "Permitir HTTP sin cifrar a una IP privada",
+          "poll_interval": "Intervalo de comprobación de la sesión (segundos)"
         }
       },
       "reconfigure": {
@@ -16,7 +17,8 @@
           "base_url": "URL base de OpenWA",
           "api_key": "Clave de API",
           "session_id": "ID de sesión",
-          "allow_http": "Permitir HTTP sin cifrar a una IP privada"
+          "allow_http": "Permitir HTTP sin cifrar a una IP privada",
+          "poll_interval": "Intervalo de comprobación de la sesión (segundos)"
         }
       },
       "reauth_confirm": {
