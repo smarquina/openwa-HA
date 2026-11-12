@@ -21,7 +21,7 @@ jobs:
           python -m pip install --require-hashes --only-binary=:all:
           --no-binary=mock-open,PyRIC -r requirements-test.lock
       - name: Run tests and generate coverage
-        run: python -m pytest -q --asyncio-mode=auto --cov=custom_components.openwa_whatsapp --cov-report=xml:coverage.xml
+        run: python -m pytest -q --asyncio-mode=auto --cov=custom_components.openwa_whatsapp --cov=scripts --cov-branch --cov-report=xml:coverage.xml
       - name: Cache SonarQube packages
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
@@ -36,7 +36,6 @@ jobs:
           args: >
             -Dsonar.organization=smarquina
             -Dsonar.projectKey=smarquina_openwa-HA
-            -Dsonar.sources=custom_components
-            -Dsonar.tests=tests
+            -Dsonar.coverage.exclusions=tests/**
             -Dsonar.python.version=3.14
             -Dsonar.python.coverage.reportPaths=coverage.xml
