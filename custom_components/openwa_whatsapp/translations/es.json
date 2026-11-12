@@ -7,7 +7,8 @@
           "base_url": "URL base de OpenWA",
           "api_key": "Clave de API",
           "session_id": "ID de sesión",
-          "allow_http": "Permitir HTTP sin cifrar a una IP privada"
+          "allow_http": "Permitir HTTP sin cifrar a una IP privada",
+          "poll_interval": "Intervalo de comprobación de la sesión (segundos)"
         }
       },
       "reconfigure": {
@@ -16,7 +17,8 @@
           "base_url": "URL base de OpenWA",
           "api_key": "Clave de API",
           "session_id": "ID de sesión",
-          "allow_http": "Permitir HTTP sin cifrar a una IP privada"
+          "allow_http": "Permitir HTTP sin cifrar a una IP privada",
+          "poll_interval": "Intervalo de comprobación de la sesión (segundos)"
         }
       },
       "reauth_confirm": {
@@ -114,6 +116,28 @@
         "entry_id": {
           "name": "ID de la entrada",
           "description": "ID opcional de la entrada de configuración de Home Assistant si hay varias instancias de OpenWA configuradas."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "available": {
+        "name": "Disponible"
+      }
+    },
+    "sensor": {
+      "session": {
+        "name": "Sesión OpenWA",
+        "state": {
+          "ready": "Lista",
+          "invalid_auth": "Clave API no válida",
+          "forbidden": "Acceso denegado",
+          "session_not_found": "Sesión no encontrada",
+          "session_not_ready": "Sesión no preparada",
+          "cannot_connect": "API inaccesible",
+          "invalid_tls": "Error de verificación TLS",
+          "invalid_response": "Respuesta no válida"
         }
       }
     }

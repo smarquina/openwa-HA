@@ -7,7 +7,8 @@
           "base_url": "OpenWA base URL",
           "api_key": "API key",
           "session_id": "Session ID",
-          "allow_http": "Allow unencrypted HTTP to a private IP"
+          "allow_http": "Allow unencrypted HTTP to a private IP",
+          "poll_interval": "Session check interval (seconds)"
         }
       },
       "reconfigure": {
@@ -16,7 +17,8 @@
           "base_url": "OpenWA base URL",
           "api_key": "API key",
           "session_id": "Session ID",
-          "allow_http": "Allow unencrypted HTTP to a private IP"
+          "allow_http": "Allow unencrypted HTTP to a private IP",
+          "poll_interval": "Session check interval (seconds)"
         }
       },
       "reauth_confirm": {
@@ -114,6 +116,28 @@
         "entry_id": {
           "name": "Entry ID",
           "description": "Optional Home Assistant config entry ID to use when multiple OpenWA instances are configured."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "available": {
+        "name": "Available"
+      }
+    },
+    "sensor": {
+      "session": {
+        "name": "OpenWA session",
+        "state": {
+          "ready": "Ready",
+          "invalid_auth": "Invalid API key",
+          "forbidden": "Access denied",
+          "session_not_found": "Session not found",
+          "session_not_ready": "Session not ready",
+          "cannot_connect": "API unreachable",
+          "invalid_tls": "TLS verification failed",
+          "invalid_response": "Invalid response"
         }
       }
     }

@@ -20,6 +20,10 @@ from .const import (
     CONF_API_KEY,
     CONF_BASE_URL,
     CONF_SESSION_ID,
+    CONF_POLL_INTERVAL,
+    DEFAULT_POLL_INTERVAL,
+    MIN_POLL_INTERVAL,
+    MAX_POLL_INTERVAL,
     DEFAULT_NAME,
     DOMAIN,
 )
@@ -116,6 +120,9 @@ class OpenWAConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ),
                 vol.Required(CONF_SESSION_ID, default=defaults.get(CONF_SESSION_ID, "")): str,
                 vol.Required(CONF_ALLOW_HTTP, default=defaults.get(CONF_ALLOW_HTTP, False)): bool,
+                vol.Required(CONF_POLL_INTERVAL, default=defaults.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)): vol.All(
+                    int, vol.Range(min=MIN_POLL_INTERVAL, max=MAX_POLL_INTERVAL)
+                ),
             }
         )
         return self.async_show_form(step_id=step_id, data_schema=schema, errors=errors)
