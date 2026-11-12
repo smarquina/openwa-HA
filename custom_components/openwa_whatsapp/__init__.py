@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
+from homeassistant.const import Platform
+
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
@@ -15,6 +19,7 @@ from homeassistant.helpers import config_validation as cv
 from .application import SendNotification
 from .client import OpenWAClient, validate_endpoint
 from .errors import OpenWAError, OpenWAErrorCode
+from .coordinator import SessionCoordinator, SESSION_READY
 from .const import (
     ATTR_CHAT_ID,
     ATTR_ENTRY_ID,
@@ -27,6 +32,17 @@ from .const import (
     SERVICE_SEND_MESSAGE,
 )
 
+
+@dataclass
+class RuntimeData:
+    """Per-entry application and session monitor."""
+
+    _gateway: OpenWAClient
+    sender: SendNotification
+    coordinator: SessionCoordinator
+
+
+PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR]
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -102,12 +118,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             raise ConfigEntryNotReady from None
         raise ConfigEntryError(translation_domain=DOMAIN, translation_key=err.code.value) from None
 
-    entry.runtime_data = SendNotification(client)
-    hass.data[DOMAIN][entry.entry_id] = entry.runtime_data
+    coordinator = SessionCoordinator(hass, client)
+    coordinator.async_set_updated_data(SESSION_READY)
+    sender = SendNotification(client)
+    entry.runtime_data = RuntimeData(client, sender, coordinator)
+    hass.data[DOMAIN][entry.entry_id] = sender
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Remove the client when its configuration entry unloads."""
+    if not await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
+        return False
     hass.data[DOMAIN].pop(entry.entry_id, None)
     return True

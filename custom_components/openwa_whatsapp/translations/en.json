@@ -117,5 +117,27 @@
         }
       }
     }
+  },
+  "entity": {
+    "binary_sensor": {
+      "available": {
+        "name": "Available"
+      }
+    },
+    "sensor": {
+      "session": {
+        "name": "OpenWA session",
+        "state": {
+          "ready": "Ready",
+          "invalid_auth": "Invalid API key",
+          "forbidden": "Access denied",
+          "session_not_found": "Session not found",
+          "session_not_ready": "Session not ready",
+          "cannot_connect": "API unreachable",
+          "invalid_tls": "TLS verification failed",
+          "invalid_response": "Invalid response"
+        }
+      }
+    }
   }
 }

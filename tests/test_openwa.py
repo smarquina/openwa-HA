@@ -444,3 +444,38 @@ async def test_reconfigure_rejects_another_entry_identity(hass, aioclient_mock):
     assert result["reason"] == "already_configured"
     assert second.unique_id == f"{BASE}_other"
     assert second.data == second_data
+
+
+@pytest.mark.parametrize(
+    ("error", "expected"),
+    [(OpenWAErrorCode.INVALID_AUTH, "invalid_auth"),
+     (OpenWAErrorCode.FORBIDDEN, "forbidden"),
+     (OpenWAErrorCode.SESSION_NOT_FOUND, "session_not_found"),
+     (OpenWAErrorCode.SESSION_NOT_READY, "session_not_ready"),
+     (OpenWAErrorCode.CANNOT_CONNECT, "cannot_connect"),
+     (OpenWAErrorCode.INVALID_TLS, "invalid_tls"),
+     (OpenWAErrorCode.INVALID_RESPONSE, "invalid_response")],
+)
+async def test_session_sensors_failure_and_recovery(hass, configured, monkeypatch, error, expected):
+    """Both sensors reflect one shared check, then recover together."""
+    from unittest.mock import AsyncMock
+    from homeassistant.helpers import entity_registry as er
+
+    coordinator = configured.runtime_data.coordinator
+    registry = er.async_get(hass)
+    available = registry.async_get_entity_id("binary_sensor", DOMAIN, f"{configured.entry_id}_available")
+    session = registry.async_get_entity_id("sensor", DOMAIN, f"{configured.entry_id}_session")
+    assert hass.states.get(available).state == "on"
+    assert hass.states.get(session).state == "ready"
+    check = AsyncMock(side_effect=OpenWAError(error))
+    monkeypatch.setattr(coordinator._gateway, "async_check_session", check)
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert check.await_count == 1
+    assert hass.states.get(available).state == "off"
+    assert hass.states.get(session).state == expected
+    check.side_effect = None
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get(available).state == "on"
+    assert hass.states.get(session).state == "ready"

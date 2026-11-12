@@ -60,6 +60,10 @@ In Home Assistant, open **Settings → Devices & services → Add integration** 
 
 The integration checks that the selected session is ready. To change the connection settings, open the integration entry and select **Reconfigure**. Home Assistant stores the API key in the integration configuration.
 
+## Session diagnostics
+
+Each configured entry provides two diagnostic entities: **Available**, a connectivity indicator, and **OpenWA session**, which explains the current state. They share a session check every 60 seconds using the configured API key and session ID. A ready session does not guarantee delivery of a message.
+
 ## Send a message
 
 Use the `openwa_whatsapp.send_message` action in an automation, script or **Developer Tools → Actions**.
